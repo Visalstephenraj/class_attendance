@@ -44,8 +44,10 @@ def mark_attendance():
             attendance_history[selected_date] = {}
 
         for s in students:
-            status = request.form.get(s, "A")
+            status = request.form.get(f"status_{s}", "A")  # ✅ Fixed
+            info = request.form.get(f"info_{s}", "not_informed")  # Optional if you have informed
             attendance_history[selected_date][s] = status
+            attendance_history[selected_date][f"{s}_info"] = info  # Optional
 
     else:
         selected_date = datetime.now().strftime("%d-%m-%Y")
@@ -124,10 +126,26 @@ def manage_students():
     return render_template("students.html", students=students)
 
 
+from flask import request  # make sure to import request
+
 @app.route("/attendance-records")
 def view_attendance_records():
-    dates = sorted(attendance_history.keys(), reverse=True)
-    return render_template("attendance_records.html", dates=dates)
+    # Get selected date and course from query parameters
+    selected_date = request.args.get("date")
+    selected_course = request.args.get("course")
+
+    # Filter records based on selected date & course
+    filtered_records = {}
+    if selected_date and selected_course:
+        filtered_records = attendance_history.get(selected_date, {}).get(selected_course, {})
+
+    return render_template(
+        "attendance_records.html",
+        courses=courses,
+        selected_date=selected_date,
+        selected_course=selected_course,
+        records=filtered_records
+    )
 
 
 
